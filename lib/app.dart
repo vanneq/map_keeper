@@ -1,13 +1,19 @@
 import 'package:flutter/cupertino.dart';
+import 'package:place_on_map/core/router/router.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const CupertinoApp(
+    return CupertinoApp.router(
       debugShowCheckedModeBanner: false,
-      home: CupertinoPageScaffold(child: Center(child: Text('place on map'))),
+      routerConfig: router,
+      theme: CupertinoThemeData(
+        textTheme: CupertinoTextThemeData(
+          textStyle: TextStyle(fontFamily: '.SF UI Text'),
+        ),
+      ),
     );
   }
 }
