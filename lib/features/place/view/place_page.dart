@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:place_on_map/core/cubit/place_cubit.dart';
 import 'package:place_on_map/core/cubit/place_state.dart';
 import 'package:place_on_map/features/place/widgets/place_card.dart';
@@ -18,12 +20,7 @@ class PlacePage extends StatelessWidget {
         ),
         trailing: GestureDetector(
           onTap: () {
-            context.read<PlaceCubit>().addPlace(
-              'Home',
-              54.2312,
-              12.24341,
-              DateTime(2025),
-            );
+            context.go('/map');
           },
           child: Container(
             padding: const EdgeInsets.all(8),
@@ -63,7 +60,7 @@ class PlacePage extends StatelessWidget {
                         final place = placeList[index];
                         return PlaceCard(
                           title: place.title,
-                          createAt: place.createAt.toString(),
+                          createAt: DateFormat('d MMM yyyy').format(place.createAt),
                           onDeleteTap: () {
                             context.read<PlaceCubit>().deletePlace(place);
                           },
