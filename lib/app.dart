@@ -1,4 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:place_on_map/core/cubit/place_cubit.dart';
+import 'package:place_on_map/core/hive/hive_service.dart';
 import 'package:place_on_map/core/router/router.dart';
 
 class MyApp extends StatelessWidget {
@@ -6,12 +9,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp.router(
-      debugShowCheckedModeBanner: false,
-      routerConfig: router,
-      theme: CupertinoThemeData(
-        textTheme: CupertinoTextThemeData(
-          textStyle: TextStyle(fontFamily: '.SF UI Text'),
+    return BlocProvider(
+      create: (context) => PlaceCubit(HiveService())..loadPlaces(),
+      child: CupertinoApp.router(
+        debugShowCheckedModeBanner: false,
+        routerConfig: router,
+        theme: CupertinoThemeData(
+          textTheme: CupertinoTextThemeData(
+            textStyle: TextStyle(fontFamily: '.SF UI Text'),
+          ),
         ),
       ),
     );
