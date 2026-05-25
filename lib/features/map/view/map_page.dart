@@ -1,7 +1,12 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors;
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:place_on_map/core/cubit/place_cubit.dart';
+import 'package:place_on_map/core/cubit/place_state.dart';
+import 'package:place_on_map/features/map/widgets/show_dialog.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -18,18 +23,50 @@ class _MapPageState extends State<MapPage> {
       children: [
         FlutterMap(
           mapController: _zoomController,
-          options: MapOptions(initialZoom: 14),
+          options: MapOptions(
+            initialZoom: 14,
+            onTap: (tapPosition, point) => showAddDialog(context, point),
+          ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: LatLng(43.2363924, 76.9457275),
-                  child: Icon(CupertinoIcons.map_pin),
-                ),
-              ],
+            BlocBuilder<PlaceCubit, PlaceState>(
+              builder: (context, state) {
+                final places = state is PlaceLoaded ? state.placeList : [];
+                return MarkerLayer(
+                  markers: places
+                      .map(
+                        (place) => Marker(
+                          point: LatLng(place.latitude, place.longitude),
+                          child: GestureDetector(
+                            onTap: () => showCupertinoDialog(
+                              context: context,
+                              builder: (dialogContext) => CupertinoAlertDialog(
+                                title: Text(place.title),
+                                content: Text(
+                                  'Create: ${DateFormat('d MMM yyyy').format(place.createAt)}',
+                                ),
+                                actions: [
+                                  CupertinoDialogAction(
+                                    child: const Text('Close'),
+                                    onPressed: () =>
+                                        Navigator.pop(dialogContext),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.map_pin,
+                              color: CupertinoColors.systemRed,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                );
+              },
             ),
           ],
         ),
@@ -53,10 +90,14 @@ class _MapPageState extends State<MapPage> {
                 ),
                 SizedBox(height: 4),
                 GestureDetector(
-                  onTap: () => _zoomController.move(
-                    _zoomController.camera.center,
-                    _zoomController.camera.zoom - 1,
-                  ),
+                  onTap: () {
+                    if (_zoomController.camera.zoom > 2) {
+                      _zoomController.move(
+                        _zoomController.camera.center,
+                        _zoomController.camera.zoom - 1,
+                      );
+                    }
+                  },
                   child: Icon(CupertinoIcons.minus, color: Colors.blueGrey),
                 ),
               ],
