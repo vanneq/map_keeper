@@ -1,4 +1,9 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:place_on_map/core/cubit/place_cubit.dart';
+import 'package:place_on_map/core/cubit/place_state.dart';
+import 'package:place_on_map/features/place/widgets/place_card.dart';
 
 class PlacePage extends StatelessWidget {
   const PlacePage({super.key});
@@ -12,7 +17,14 @@ class PlacePage extends StatelessWidget {
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         trailing: GestureDetector(
-          onTap: () {},
+          onTap: () {
+            context.read<PlaceCubit>().addPlace(
+              'Home',
+              54.2312,
+              12.24341,
+              DateTime(2025),
+            );
+          },
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -35,6 +47,38 @@ class PlacePage extends StatelessWidget {
               padding: const EdgeInsets.only(top: 14, bottom: 20),
               child: _SearchField(),
             ),
+            Expanded(
+              child: BlocBuilder<PlaceCubit, PlaceState>(
+                builder: (context, state) {
+                  return switch (state) {
+                    PlaceInitial() => const Center(
+                      child: CupertinoActivityIndicator(),
+                    ),
+                    PlaceError(:final message) => Center(child: Text(message)),
+                    PlaceIsEmpty() => const Center(
+                      child: Text("Add new Place"),
+                    ),
+                    PlaceLoaded(:final placeList) => ListView.separated(
+                      itemBuilder: (context, index) {
+                        final place = placeList[index];
+                        return PlaceCard(
+                          title: place.title,
+                          createAt: place.createAt.toString(),
+                          onDeleteTap: () {
+                            context.read<PlaceCubit>().deletePlace(place);
+                          },
+                        );
+                      },
+                      separatorBuilder: (context, index) => const Divider(
+                        height: 1,
+                        color: CupertinoColors.systemGrey5,
+                      ),
+                      itemCount: placeList.length,
+                    ),
+                  };
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -48,7 +92,7 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoTextField(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: EdgeInsets.symmetric(vertical: 14),
       placeholder: "Search place",
       prefix: const Padding(
         padding: EdgeInsets.symmetric(horizontal: 8),
