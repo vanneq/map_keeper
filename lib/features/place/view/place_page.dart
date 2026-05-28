@@ -7,8 +7,21 @@ import 'package:place_on_map/core/cubit/place_cubit.dart';
 import 'package:place_on_map/core/cubit/place_state.dart';
 import 'package:place_on_map/features/place/widgets/place_card.dart';
 
-class PlacePage extends StatelessWidget {
+class PlacePage extends StatefulWidget {
   const PlacePage({super.key});
+
+  @override
+  State<PlacePage> createState() => _PlacePageState();
+}
+
+class _PlacePageState extends State<PlacePage> {
+  String searchValue = '';
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<PlaceCubit>().loadPlaces();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +55,11 @@ class PlacePage extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 14, bottom: 20),
-              child: _SearchField(),
+              child: SearchField(
+                onChanged: (value) => setState(() {
+                  searchValue = value;
+                }),
+              ),
             ),
             Expanded(
               child: BlocBuilder<PlaceCubit, PlaceState>(
@@ -55,22 +72,9 @@ class PlacePage extends StatelessWidget {
                     PlaceIsEmpty() => const Center(
                       child: Text("Add new Place"),
                     ),
-                    PlaceLoaded(:final placeList) => ListView.separated(
-                      itemBuilder: (context, index) {
-                        final place = placeList[index];
-                        return PlaceCard(
-                          title: place.title,
-                          createAt: DateFormat('d MMM yyyy').format(place.createAt),
-                          onDeleteTap: () {
-                            context.read<PlaceCubit>().deletePlace(place);
-                          },
-                        );
-                      },
-                      separatorBuilder: (context, index) => const Divider(
-                        height: 1,
-                        color: CupertinoColors.systemGrey5,
-                      ),
-                      itemCount: placeList.length,
+                    PlaceLoaded(:final placeList) => _buildList(
+                      context,
+                      placeList,
                     ),
                   };
                 },
@@ -81,14 +85,61 @@ class PlacePage extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildList(BuildContext context, List places) {
+    final filtered = searchValue.isEmpty
+        ? places
+        : places
+              .where(
+                (p) =>
+                    p.title.toLowerCase().contains(searchValue.toLowerCase()),
+              )
+              .toList();
+
+    if (filtered.isEmpty) {
+      return const Center(child: Text('No results'));
+    }
+
+    return ListView.separated(
+      itemCount: filtered.length,
+      separatorBuilder: (context, index) =>
+          const Divider(height: 1, color: CupertinoColors.systemGrey5),
+      itemBuilder: (context, index) {
+        final place = filtered[index];
+        return PlaceCard(
+          title: place.title,
+          createAt: DateFormat('d MMM yyyy').format(place.createAt),
+          onDeleteTap: () {
+            context.read<PlaceCubit>().deletePlace(place);
+          },
+        );
+      },
+    );
+  }
 }
 
-class _SearchField extends StatelessWidget {
-  const _SearchField();
+class SearchField extends StatefulWidget {
+  final ValueChanged onChanged;
+  const SearchField({super.key, required this.onChanged});
+
+  @override
+  State<SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<SearchField> {
+  final controller = TextEditingController();
+
+  @override
+  void dispose() {
+    super.dispose();
+    controller.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoTextField(
+      onChanged: widget.onChanged,
+      controller: controller,
       padding: EdgeInsets.symmetric(vertical: 14),
       placeholder: "Search place",
       prefix: const Padding(
